@@ -1,0 +1,3 @@
+[workspace]
+
+members = ["xp3-packer","xp3-unpacker"]
