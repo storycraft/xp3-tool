@@ -36,14 +36,11 @@ fn run(args: Args) -> anyhow::Result<()> {
 
         let tname = name.replace('\\', "/");
         let tpath = tname.trim_start_matches('/');
-        let path = Path::new(&out_dir).join(tpath);
+        let path = args.out_dir.join(tpath);
 
         if let Some(parent) = path.parent() {
             fs::create_dir_all(parent).unwrap();
         }
-
-        archive.unpack(&name.into(), &mut BufWriter::new(File::create(&path).unwrap())).unwrap();
-    }
 
         let mut stream = BufWriter::new(
             File::create(&path)
