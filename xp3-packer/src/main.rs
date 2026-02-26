@@ -16,9 +16,7 @@ use xp3::{
 
 #[derive(Parser)]
 struct Args {
-    #[arg()]
     input_dir: PathBuf,
-    #[arg()]
     out_xp3: PathBuf,
 }
 
@@ -29,10 +27,8 @@ fn main() {
 }
 
 fn run(args: Args) -> anyhow::Result<()> {
-    let out = File::create(&args.out_xp3).with_context(|| format!(
-        "failed to open {} for read",
-        args.out_xp3.display()
-    ))?;
+    let out = File::create(&args.out_xp3)
+        .with_context(|| format!("failed to open {} for read", args.out_xp3.display()))?;
 
     let mut writer = XP3Writer::start(
         BufWriter::new(out),

@@ -10,9 +10,7 @@ use xp3::reader::XP3Reader;
 
 #[derive(Parser)]
 struct Args {
-    #[arg()]
     input_xp3: PathBuf,
-    #[arg()]
     out_dir: PathBuf,
 }
 
