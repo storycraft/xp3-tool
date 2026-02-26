@@ -4,7 +4,12 @@
  * Copyright (c) storycraft. Licensed under the MIT Licence.
  */
 
-use std::{env, fs::{self, File}, io::{BufReader, BufWriter}, path::Path};
+use std::{
+    env,
+    fs::{self, File},
+    io::{BufReader, BufWriter},
+    path::Path,
+};
 
 use xp3::reader::XP3Reader;
 
@@ -16,9 +21,10 @@ fn main() {
         return;
     }
 
-    let input_xp3 = File::open(&args[1]).expect(&format!("Cannot open {} for read", &args[1]));
+    let input_xp3 = File::open(&args[1]).unwrap_or_else(|_| panic!("Cannot open {} for read", &args[1]));
     let out_dir = args[2].clone();
-    let archive = XP3Reader::open_archive(BufReader::new(input_xp3)).expect("Input file is invalid");
+    let archive =
+        XP3Reader::open_archive(BufReader::new(input_xp3)).expect("Input file is invalid");
 
     for (name, _) in archive.entries() {
         println!("Extracting: {}", name);
@@ -27,13 +33,16 @@ fn main() {
             println!("Skipping {} . File name is too long.", name);
             continue;
         }
-        
+
         let path_str = format!("{}/{}", out_dir, name);
         let path = Path::new(&path_str);
         fs::create_dir_all(path.parent().unwrap()).unwrap();
 
-        archive.unpack(&name.into(), &mut BufWriter::new(File::create(path).unwrap())).unwrap();
+        archive
+            .unpack(
+                &name.into(),
+                &mut BufWriter::new(File::create(path).unwrap()),
+            )
+            .unwrap();
     }
-
-
 }
