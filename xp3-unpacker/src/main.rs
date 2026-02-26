@@ -34,9 +34,12 @@ fn run(args: Args) -> anyhow::Result<()> {
             continue;
         }
 
-        let path = args.out_dir.join(name);
-        if let Some(parent_dir) = path.parent() {
-            fs::create_dir_all(parent_dir).context("failed to create parent dir for files")?;
+        let tname = name.replace('\\', "/");
+        let tpath = tname.trim_start_matches('/');
+        let path = args.out_dir.join(tpath);
+
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).unwrap();
         }
 
         let mut stream = BufWriter::new(
