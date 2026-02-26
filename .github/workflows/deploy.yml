@@ -37,7 +37,7 @@ jobs:
           cache-all-crates: true
 
       - name: Build
-        run: cargo build --bins --release 
+        run: cargo build --bins --release --target x86_64-pc-windows-msvc --target x86_64-unknown-linux-gnu
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
