@@ -24,7 +24,7 @@ struct Args {
 
 fn main() {
     if let Err(err) = run(Args::parse()) {
-        eprintln!("Error: {err:#?}");
+        eprintln!("Error: {err:?}");
     }
 }
 
