@@ -1,8 +1,8 @@
 [package]
 name = "xp3-unpacker"
 version = "0.1.0"
-authors = ["storycraft <storycraft@storyboard.ml>"]
-edition = "2018"
+authors = ["storycraft <storycraft@pancake.sh>"]
+edition = "2024"
 license = "MIT"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
