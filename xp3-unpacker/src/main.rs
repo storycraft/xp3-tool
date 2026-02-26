@@ -27,12 +27,16 @@ fn main() {
             println!("Skipping {} . File name is too long.", name);
             continue;
         }
-        
-        let path_str = format!("{}/{}", out_dir, name);
-        let path = Path::new(&path_str);
-        fs::create_dir_all(path.parent().unwrap()).unwrap();
 
-        archive.unpack(&name.into(), &mut BufWriter::new(File::create(path).unwrap())).unwrap();
+        let tname = name.replace('\\', "/");
+        let tpath = tname.trim_start_matches('/');
+        let path = Path::new(&out_dir).join(tpath);
+
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).unwrap();
+        }
+
+        archive.unpack(&name.into(), &mut BufWriter::new(File::create(&path).unwrap())).unwrap();
     }
 
 
