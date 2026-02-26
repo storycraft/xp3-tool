@@ -6,4 +6,6 @@ edition = "2024"
 license = "MIT"
 
 [dependencies]
+anyhow = "1.0.102"
+clap = { version = "4.5.60", features = ["derive"] }
 xp3 = "0.2.2"
