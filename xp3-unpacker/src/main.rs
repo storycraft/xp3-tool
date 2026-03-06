@@ -38,9 +38,15 @@ fn run(args: Args) -> anyhow::Result<()> {
             continue;
         }
 
-        let path = args.out_dir.join(&entry.name);
-        if let Some(parent_dir) = path.parent() {
-            fs::create_dir_all(parent_dir).context("failed to create parent dir for files")?;
+        let mut path = args.out_dir.clone();
+        for comps in entry.name.split('\\') {
+            if comps.is_empty() {
+                continue;
+            }
+            path.push(comps);
+        }
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).unwrap();
         }
 
         let mut stream =
