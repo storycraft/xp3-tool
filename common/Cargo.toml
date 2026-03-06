@@ -1,0 +1,9 @@
+[package]
+name = "common"
+version = "0.1.0"
+authors = ["storycraft <storycraft@pancake.sh>"]
+edition = "2024"
+license = "MIT"
+
+[dependencies]
+tokio = "1.50.0"

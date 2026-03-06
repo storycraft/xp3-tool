@@ -1,23 +1,24 @@
 use std::{
     fs::File,
-    io::{self, BufWriter, Read, Seek, Write},
+    io::{self, BufWriter},
     path::PathBuf,
 };
 
 use anyhow::Context;
 use clap::Parser;
+use common::{AsyncSeek, AsyncWrite, SyncIo, copy, oneshot_async};
 use io::BufReader;
-use xp3::{
-    header::XP3HeaderVersion,
-    index::file::{IndexInfoFlag, IndexSegmentFlag},
-    index_set::XP3IndexCompression,
-    writer::XP3Writer,
-};
+use xp3::{header::XP3Version, write::XP3Writer};
 
 #[derive(Parser)]
 struct Args {
+    /// Directory for archive files
     input_dir: PathBuf,
+    /// Output XP3 path
     out_xp3: PathBuf,
+    /// Archive compression level from 0 to 9
+    #[arg(short, long)]
+    compression: Option<u8>,
 }
 
 fn main() {
@@ -30,28 +31,24 @@ fn run(args: Args) -> anyhow::Result<()> {
     let out = File::create(&args.out_xp3)
         .with_context(|| format!("failed to open {} for read", args.out_xp3.display()))?;
 
-    let mut writer = XP3Writer::start(
-        BufWriter::new(out),
-        XP3HeaderVersion::Current {
-            minor_version: 1,
-            index_size_offset: 0,
-        },
-        XP3IndexCompression::Compressed,
-    )
-    .expect("failed to write out_xp3");
+    let mut writer = oneshot_async(XP3Writer::new(
+        XP3Version::Current { minor: 1 },
+        SyncIo(BufWriter::new(out)),
+    ))
+    .context("failed to write out_xp3")?;
 
-    add_all_file(&mut writer, &args.input_dir, &args.input_dir)
+    add_all_file(&mut writer, &args.input_dir, &args.input_dir, args.compression)
         .context("failed to add input files")?;
 
-    writer.finish().expect("failed to finish file");
-
+    oneshot_async(writer.finish(args.compression)).context("failed to finish file")?;
     Ok(())
 }
 
-fn add_all_file<T: Write + Seek>(
+fn add_all_file<T: AsyncWrite + AsyncSeek + Unpin>(
     writer: &mut XP3Writer<T>,
     root: &PathBuf,
     dir_path: &PathBuf,
+    compression: Option<u8>,
 ) -> anyhow::Result<()> {
     let dir = std::fs::read_dir(dir_path).context("failed to read directory")?;
 
@@ -64,7 +61,7 @@ fn add_all_file<T: Write + Seek>(
         let relative_path = path.strip_prefix(root)?;
 
         if path.is_dir() {
-            let res = add_all_file(writer, root, &path);
+            let res = add_all_file(writer, root, &path, compression);
             if res.is_err() {
                 println!(
                     "Skipping unreadable directory: {}. Err: {:?}",
@@ -84,22 +81,14 @@ fn add_all_file<T: Write + Seek>(
             };
             let time = path.metadata()?.modified()?.elapsed()?.as_millis() as u64;
 
-            let mut buffer = Vec::new();
-            let mut reader = BufReader::new(file);
-
-            reader
-                .read_to_end(&mut buffer)
-                .with_context(|| format!("failed to read content of {}", path.display()))?;
-
-            let mut entry = writer.enter_file(
-                IndexInfoFlag::NotProtected,
+            let mut entry = oneshot_async(writer.file(
                 relative_path.display().to_string(),
-                Some(time),
-            );
-            entry
-                .write_segment(IndexSegmentFlag::UnCompressed, &buffer)
-                .context("failed writing xp3 segments")?;
-            entry.finish();
+                false,
+                compression,
+            ))?;
+            entry.timestamp(Some(time));
+            oneshot_async(copy(&mut SyncIo(BufReader::new(file)), &mut entry))?;
+            oneshot_async(entry.finish())?;
         }
     }
 
